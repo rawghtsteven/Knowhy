@@ -3,15 +3,16 @@ package com.example.apple.knowhy;
 import android.annotation.TargetApi;
 import android.app.Activity;
 import android.graphics.Typeface;
+import android.net.ConnectivityManager;
 import android.os.Build;
 import android.support.design.widget.TabLayout;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
 import android.support.v4.app.FragmentPagerAdapter;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.transition.Transition;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
@@ -25,9 +26,12 @@ import com.readystatesoftware.systembartint.SystemBarTintManager;
 import java.util.ArrayList;
 import java.util.List;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements EmptyFragment.onInternetAccessChanged{
 
     private static final int PAGE_NUM = 4;
+    private ViewPager viewPager;
+    private TabLayout tabLayout;
+    private Fragment empty;
 
 
     @Override
@@ -41,8 +45,51 @@ public class MainActivity extends AppCompatActivity {
         assert KNOWHY != null;
         KNOWHY.setTypeface(SegoeSemibold);
 
-        TabLayout tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        ViewPager viewPager = (ViewPager) findViewById(R.id.view_pager);
+        tabLayout = (TabLayout) findViewById(R.id.tab_layout);
+        viewPager = (ViewPager) findViewById(R.id.view_pager);
+
+        ConnectivityManager con=(ConnectivityManager)getSystemService(Activity.CONNECTIVITY_SERVICE);
+        boolean wifi=con.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected();
+        boolean internet=con.getNetworkInfo(ConnectivityManager.TYPE_MOBILE).isConnected();
+
+        if (!wifi&&!internet){
+
+            empty = new EmptyFragment();
+            FragmentManager fm = getSupportFragmentManager();
+            FragmentTransaction transaction = fm.beginTransaction();
+            transaction.replace(R.id.main_layout,empty).commit();
+
+        }else {
+
+            List<Fragment> fragmentList = new ArrayList<>();
+            Fragment ribao = new Ribao();
+            Fragment zhuti = new Zhuti();
+            Fragment zhuanlan = new Zhuanlan();
+            Fragment remen  =  new Remen();
+            fragmentList.add(ribao);
+            fragmentList.add(zhuti);
+            fragmentList.add(remen);
+            fragmentList.add(zhuanlan);
+
+            List<String> titleList = new ArrayList<>();
+            titleList.add("今日");
+            titleList.add("主题");
+            titleList.add("热门");
+            titleList.add("专栏");
+
+            assert viewPager != null;
+            viewPager.setOffscreenPageLimit(PAGE_NUM);
+            MainPagerAdapter mainPagerAdapter = new MainPagerAdapter(getSupportFragmentManager(),fragmentList,titleList);
+            viewPager.setAdapter(mainPagerAdapter);
+            assert tabLayout != null;
+            tabLayout.setupWithViewPager(viewPager);
+        }
+    }
+
+    @Override
+    public void accessChanged(boolean InternetState) {
+
+        getSupportFragmentManager().beginTransaction().remove(empty).commit();
 
         List<Fragment> fragmentList = new ArrayList<>();
         Fragment ribao = new Ribao();
@@ -53,7 +100,6 @@ public class MainActivity extends AppCompatActivity {
         fragmentList.add(zhuti);
         fragmentList.add(remen);
         fragmentList.add(zhuanlan);
-
         List<String> titleList = new ArrayList<>();
         titleList.add("今日");
         titleList.add("主题");
