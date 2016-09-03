@@ -1,5 +1,7 @@
 package com.example.apple.knowhy;
 
+import java.util.List;
+
 /**
  * Created by Rawght Steven on 8/10/16, 09.
  * Email:rawghtsteven@gmail.com
@@ -13,6 +15,8 @@ public class ArticalBean {
     private String share_url;
     private Section section;
     private int id;
+    private List<String> js;
+    private List<String> css;
 
     public String getBody() {
         return body;
@@ -68,6 +72,22 @@ public class ArticalBean {
 
     public void setId(int id) {
         this.id = id;
+    }
+
+    public List<String> getJs() {
+        return js;
+    }
+
+    public void setJs(List<String> js) {
+        this.js = js;
+    }
+
+    public List<String> getCss() {
+        return css;
+    }
+
+    public void setCss(List<String> css) {
+        this.css = css;
     }
 
     public static class Section {

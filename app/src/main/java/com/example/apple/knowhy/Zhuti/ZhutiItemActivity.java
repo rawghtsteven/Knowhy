@@ -14,6 +14,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -92,7 +93,7 @@ public class ZhutiItemActivity extends AppCompatActivity{
             @TargetApi(Build.VERSION_CODES.LOLLIPOP)
             @Override
             public void onResponse(Bitmap response) {
-                Drawable drawable = new BitmapDrawable(response);
+                BitmapDrawable drawable = new BitmapDrawable(response);
                 linearLayout.setBackground(drawable);
             }
         }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {

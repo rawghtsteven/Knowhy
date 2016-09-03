@@ -13,9 +13,11 @@ import android.support.v4.app.FragmentTransaction;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.KeyEvent;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.example.apple.knowhy.Remen.Remen;
 import com.example.apple.knowhy.Ribao.Ribao;
@@ -32,6 +34,7 @@ public class MainActivity extends AppCompatActivity implements EmptyFragment.onI
     private ViewPager viewPager;
     private TabLayout tabLayout;
     private Fragment empty;
+    private long exitTime = 0;
 
 
     @Override
@@ -162,5 +165,24 @@ public class MainActivity extends AppCompatActivity implements EmptyFragment.onI
             winParams.flags &= ~bits;
         }
         win.setAttributes(winParams);
+    }
+
+    @Override
+    public boolean onKeyDown(int keyCode, KeyEvent event) {
+        if(keyCode == KeyEvent.KEYCODE_BACK && event.getAction() == KeyEvent.ACTION_DOWN)
+        {
+            if((System.currentTimeMillis()-exitTime) > 2000)  //System.currentTimeMillis()无论何时调用，肯定大于2000
+            {
+                Toast.makeText(getApplicationContext(), "再按一次退出程序",Toast.LENGTH_SHORT).show();
+                exitTime = System.currentTimeMillis();
+            }
+            else
+            {
+                finish();
+                System.exit(0);
+            }
+            return true;
+        }
+        return super.onKeyDown(keyCode, event);
     }
 }

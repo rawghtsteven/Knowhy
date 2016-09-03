@@ -24,9 +24,16 @@ import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
+import com.tencent.smtt.sdk.QbSdk;
 
 import org.json.JSONException;
 import org.json.JSONObject;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.List;
 
 /**
  * Created by Rawght Steven on 8/9/16, 14.
@@ -38,8 +45,8 @@ public class ArticalActivity extends AppCompatActivity{
     private int id;
     private ImageView imageView;
     private TextView textView;
-    private WebView webView;
-    private Button back, share, comment, like;
+    private com.tencent.smtt.sdk.WebView webView;
+    private Button share, comment, like;
     private RequestQueue queue;
 
 
@@ -50,8 +57,8 @@ public class ArticalActivity extends AppCompatActivity{
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
         imageView = (ImageView) findViewById(R.id.article_image);
         textView = (TextView) findViewById(R.id.article_title);
-        webView = (WebView) findViewById(R.id.article_web);
-        back = (Button) findViewById(R.id.back);
+        QbSdk.allowThirdPartyAppDownload(true);
+        webView = (com.tencent.smtt.sdk.WebView) findViewById(R.id.article_web);
         share = (Button) findViewById(R.id.share);
         comment = (Button) findViewById(R.id.comment);
         like = (Button) findViewById(R.id.like);
@@ -59,13 +66,6 @@ public class ArticalActivity extends AppCompatActivity{
 
         Intent intent = getIntent();
         id = intent.getIntExtra("id",0);
-
-        back.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                finish();
-            }
-        });
 
         String url = "http://news-at.zhihu.com/api/4/news/"+id;
         StringRequest request = new StringRequest(url, new Response.Listener<String>() {
@@ -86,18 +86,22 @@ public class ArticalActivity extends AppCompatActivity{
     }
 
 
+    @SuppressLint("SetJavaScriptEnabled")
     private void display(ArticalBean bean) {
         String body = bean.getBody();
-        String image_source = bean.getImage_source();
         String title = bean.getTitle();
         String image = bean.getImage();
+
+        List<String> js = bean.getJs();
+        List<String> css = bean.getCss();
+
         final String share_url = bean.getShare_url();
         //ArticalBean.Section section = bean.getSection();
         //String thumbnail = section.getThumbnail();
         //String name = section.getName();
-
-        WebSettings settings= webView.getSettings(); // webView: 类WebView的实例
-        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.SINGLE_COLUMN);
+        com.tencent.smtt.sdk.WebSettings settings = webView.getSettings();
+        settings.setLayoutAlgorithm(com.tencent.smtt.sdk.WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
+        settings.setJavaScriptEnabled(true);
         webView.loadDataWithBaseURL(null,body,"text/html","utf-8",null);
         Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
         textView.setTypeface(Segoe);
