@@ -3,6 +3,11 @@
 知乎日报 in Metro!  
 Zhihu Daily App of Metro Theme!
 
+## 下载 | Download
+![alt](http://ww3.sinaimg.cn/large/be0cd226jw1f7685zj9bfj205k05kglz.jpg)
+
+## 截图 | Screenshots
+
 ![alt](http://ww3.sinaimg.cn/mw690/be0cd226jw1f6vjthcsvjj20k00zk7bh.jpg)
 ![alt](http://ww2.sinaimg.cn/mw690/be0cd226jw1f6vjtiu3wnj20k00zkdoj.jpg)
 ![alt](http://ww3.sinaimg.cn/mw690/be0cd226jw1f6vjtk9gs4j20k00zkwm4.jpg)
