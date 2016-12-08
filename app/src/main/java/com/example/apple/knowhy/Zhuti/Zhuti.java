@@ -21,7 +21,10 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
+import com.example.apple.knowhy.ServiceGenerator;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -30,68 +33,67 @@ import org.json.JSONObject;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
+
 /**
  * Created by Rawght Steven on 8/7/16, 14.
  * Email:rawghtsteven@gmail.com
  */
 public class Zhuti extends Fragment {
 
-    private RecyclerView recyclerView;
-    private RequestQueue queue;
+    @BindView(R.id.zhuti_recycler)RecyclerView recyclerView;
+    public static final String TAG = "主题";
+    private Unbinder unbinder;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.zhuti_fragment,container,false);
-        recyclerView = (RecyclerView) view.findViewById(R.id.zhuti_recycler);
-        queue = Volley.newRequestQueue(getActivity());
-        String url = "http://news-at.zhihu.com/api/4/themes";
-        StringRequest stringRequest = new StringRequest(url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                parseJSON(response);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("ZHUTI ERROR","FAILED ACCESS");
-            }
-        });
+        unbinder = ButterKnife.bind(this,view);
 
-        queue.add(stringRequest);
+        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(manager);
+
+        loadData();
+
         return view;
     }
 
-    private void parseJSON(String response) {
-        try {
-            JSONObject object = new JSONObject(response);
-            JSONArray jsonArray = object.getJSONArray("others");
-            List<ZhutiBean> beanList = new ArrayList<>();
-            for (int i=0;i<jsonArray.length();i++){
-                ZhutiBean bean = new ZhutiBean();
-                JSONObject jsonObject = jsonArray.getJSONObject(i);
-                String thumbnail = jsonObject.getString("thumbnail");
-                String description = jsonObject.getString("description");
-                int id = jsonObject.getInt("id");
-                String name = jsonObject.getString("name");
+    private void loadData() {
+        InternetService service = ServiceGenerator.createService(InternetService.class);
+        service.getZhuti()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<ZhutiBean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"Data loaded");
+                    }
 
-                bean.setThumbnail(thumbnail);
-                bean.setDescription(description);
-                bean.setId(id);
-                bean.setName(name);
-                beanList.add(bean);
-            }
-            display(beanList);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"Data load failed");
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(ZhutiBean zhutiBean) {
+                        MyAdapter adapter = new MyAdapter(zhutiBean.getOthers());
+                        recyclerView.setAdapter(adapter);
+                    }
+                });
     }
 
-    private void display(List<ZhutiBean> beanList) {
-        MyAdapter adapter = new MyAdapter(beanList);
-        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(manager);
-        recyclerView.setAdapter(adapter);
+
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
 
     @Override
@@ -100,9 +102,10 @@ public class Zhuti extends Fragment {
     }
 
     private class MyAdapter extends RecyclerView.Adapter{
-        private List<ZhutiBean> beanList;
 
-        public MyAdapter(List<ZhutiBean> beanList) {
+        private List<ZhutiBean.Others> beanList;
+
+        public MyAdapter(List<ZhutiBean.Others> beanList) {
             this.beanList = beanList;
         }
 
@@ -113,31 +116,18 @@ public class Zhuti extends Fragment {
         }
 
         @Override
-        public void onBindViewHolder(RecyclerView.ViewHolder holder, final int position) {
-            TextView zhutiName = (TextView) holder.itemView.findViewById(R.id.zhuti_title);
-            final ImageView zhutiImage = (ImageView) holder.itemView.findViewById(R.id.zhuti_image);
+        public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
+            MyViewHolder viewHolder = (MyViewHolder) holder;
             Typeface Segoe = Typeface.createFromAsset(getActivity().getAssets(),"fonts/Segoe WP.TTF");
-            zhutiName.setTypeface(Segoe);
-            zhutiName.setText(beanList.get(position).getName());
+            viewHolder.zhutiName.setTypeface(Segoe);
+            viewHolder.zhutiName.setText(beanList.get(position).getName());
             String url = beanList.get(position).getThumbnail();
-            ImageRequest imageRequest = new ImageRequest(url, new Response.Listener<Bitmap>() {
-                @Override
-                public void onResponse(Bitmap response) {
-                    zhutiImage.setImageBitmap(response);
-                }
-            }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("ZHUTI ERROR","IMAGE FAILED!");
-                    zhutiImage.setImageResource(R.drawable.skull);
-                }
-            });
-            queue.add(imageRequest);
+            Picasso.with(getActivity()).load(url).error(R.drawable.skull).into(viewHolder.zhutiImage);
 
+            final int id = beanList.get(position).getId();
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    int id = beanList.get(position).getId();
                     Intent intent = new Intent(getActivity(),ZhutiItemActivity.class);
                     intent.putExtra("id",id);
                     startActivity(intent);
@@ -149,13 +139,16 @@ public class Zhuti extends Fragment {
         public int getItemCount() {
             return beanList.size();
         }
-        class MyViewHolder extends RecyclerView.ViewHolder{
+
+        public class MyViewHolder extends RecyclerView.ViewHolder{
 
             TextView zhutiName;
             ImageView zhutiImage;
 
             public MyViewHolder(View itemView) {
                 super(itemView);
+                zhutiName = (TextView) itemView.findViewById(R.id.zhuti_title);
+                zhutiImage = (ImageView) itemView.findViewById(R.id.zhuti_image);
             }
         }
     }

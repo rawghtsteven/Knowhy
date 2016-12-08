@@ -11,7 +11,9 @@
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        android:layout_weight="0.93">
+        android:layout_weight="0.93"
+        android:id="@+id/article_layout"
+        >
 
             <FrameLayout
                 android:layout_width="match_parent"

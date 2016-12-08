@@ -21,8 +21,18 @@ import com.android.volley.VolleyError;
 import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
+import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
+import com.example.apple.knowhy.ServiceGenerator;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by Rawght Steven on 8/7/16, 14.
@@ -30,43 +40,54 @@ import com.google.gson.Gson;
  */
 public class Zhuanlan extends Fragment {
 
-    private RecyclerView recyclerView;
+    @BindView(R.id.zhuanlan_recycler)RecyclerView recyclerView;
+    public static final String TAG = "专栏";
     private RequestQueue queue;
+    private Unbinder unbinder;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.zhuanlan_fragment,container,false);
-        recyclerView = (RecyclerView) view.findViewById(R.id.zhuanlan_recycler);
-        queue = Volley.newRequestQueue(getActivity());
-        String url = "http://news-at.zhihu.com/api/3/sections";
-        StringRequest stringRequest = new StringRequest(url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Gson gson = new Gson();
-                ZhuanlanBean bean = gson.fromJson(response,ZhuanlanBean.class);
-                display(bean);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("ERROR IN ZHUANLAN","DATA ACCESS FAILED");
-            }
-        });
-        queue.add(stringRequest);
+        unbinder = ButterKnife.bind(this,view);
+
+        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(manager);
+
+        loadData();
+
         return view;
     }
 
-    private void display(ZhuanlanBean bean) {
-        Myadapter myadapter = new Myadapter(bean);
-        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(manager);
-        recyclerView.setAdapter(myadapter);
+    private void loadData() {
+        InternetService service = ServiceGenerator.createService(InternetService.class);
+        service.getZhuanlan()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<ZhuanlanBean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"Data loaded");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"Data load failed");
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(ZhuanlanBean bean) {
+                        Myadapter myadapter = new Myadapter(bean);
+                        recyclerView.setAdapter(myadapter);
+                    }
+                });
     }
 
     @Override
-    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
-        super.onActivityCreated(savedInstanceState);
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
     }
 
     private class Myadapter extends RecyclerView.Adapter{
@@ -84,29 +105,15 @@ public class Zhuanlan extends Fragment {
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            TextView title = (TextView) holder.itemView.findViewById(R.id.zhuanlan_recycler_title);
-            final ImageView imageView = (ImageView) holder.itemView.findViewById(R.id.zhuanlan_recycler_image);
+            MyViewHolder viewHolder = (MyViewHolder) holder;
             Typeface Segoe = Typeface.createFromAsset(getActivity().getAssets(),"fonts/Segoe WP.TTF");
-            title.setTypeface(Segoe);
-            title.setText(bean.getData().get(position).getName());
+            viewHolder.title.setTypeface(Segoe);
+            viewHolder.title.setText(bean.getData().get(position).getName());
             String thumbnail = bean.getData().get(position).getThumbnail();
-            ImageRequest imageRequest = new ImageRequest(thumbnail, new Response.Listener<Bitmap>() {
-                @Override
-                public void onResponse(Bitmap response) {
-                    imageView.setImageBitmap(response);
-                }
-            }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("ERROR IN ZHUANLAN","IMAGE FAILED");
-                    imageView.setImageResource(R.drawable.knowhy);
-                }
-            });
-            queue.add(imageRequest);
+            Picasso.with(getActivity()).load(thumbnail).error(R.drawable.knowhy).into(viewHolder.imageView);
 
             final int id = bean.getData().get(position).getId();
             final String desc = bean.getData().get(position).getDescription();
-
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -125,8 +132,13 @@ public class Zhuanlan extends Fragment {
 
         class MyViewHolder extends RecyclerView.ViewHolder{
 
+            TextView title;
+            ImageView imageView;
+
             public MyViewHolder(View itemView) {
                 super(itemView);
+                title = (TextView) itemView.findViewById(R.id.zhuanlan_recycler_title);
+                imageView = (ImageView) itemView.findViewById(R.id.zhuanlan_recycler_image);
             }
         }
     }

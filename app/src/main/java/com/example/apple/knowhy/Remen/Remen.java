@@ -22,8 +22,20 @@ import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.apple.knowhy.ArticalActivity;
+import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
+import com.example.apple.knowhy.ServiceGenerator;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import butterknife.Unbinder;
+import retrofit2.http.GET;
+import rx.Observable;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by Rawght Steven on 8/7/16, 14.
@@ -31,50 +43,71 @@ import com.google.gson.Gson;
  */
 public class Remen extends Fragment {
 
-    private RecyclerView recyclerView;
-    private RequestQueue queue;
+    public static final String TAG = "热门";
+    @BindView(R.id.remen_recycler) RecyclerView recyclerView;
+    private Unbinder unbinder;
+    private MyAdapter adapter;
 
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
         View view = inflater.inflate(R.layout.remen_fragment,container,false);
-        recyclerView = (RecyclerView) view.findViewById(R.id.remen_recycler);
-        queue = Volley.newRequestQueue(getActivity());
-        String url = "http://news-at.zhihu.com/api/3/news/hot";
-        StringRequest stringRequest = new StringRequest(url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Gson gson = new Gson();
-                RemenBean bean = gson.fromJson(response,RemenBean.class);
-                display(bean);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("ERROR IN REMEN","DATA ACCESS FAILED");
-            }
-        });
-        queue.add(stringRequest);
+        unbinder = ButterKnife.bind(this,view);
+
+        adapter = new MyAdapter();
+        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
+        recyclerView.setLayoutManager(manager);
+
+        loadData();
+
         return view;
     }
 
-    private void display(RemenBean bean) {
-        MyAdapter adapter = new MyAdapter(bean);
-        LinearLayoutManager manager = new LinearLayoutManager(getActivity());
-        recyclerView.setLayoutManager(manager);
-        recyclerView.setAdapter(adapter);
+    private void loadData() {
+        InternetService service = ServiceGenerator.createService(InternetService.class);
+        service.getRemen()
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<RemenBean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"Data loaded");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"Data load failed");
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(RemenBean remenBean) {
+                        adapter.setBean(remenBean);
+                        recyclerView.setAdapter(adapter);
+                    }
+                });
     }
+
 
     @Override
     public void onActivityCreated(@Nullable Bundle savedInstanceState) {
         super.onActivityCreated(savedInstanceState);
     }
 
+    @Override
+    public void onDestroyView() {
+        super.onDestroyView();
+        unbinder.unbind();
+    }
+
     private class MyAdapter extends RecyclerView.Adapter{
 
         private RemenBean bean;
 
-        public MyAdapter(RemenBean bean) {
+        public MyAdapter() {
+        }
+
+        public void setBean(RemenBean bean) {
             this.bean = bean;
         }
 
@@ -86,29 +119,17 @@ public class Remen extends Fragment {
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            TextView title = (TextView) holder.itemView.findViewById(R.id.remen_recycler_title);
-            final ImageView imageView = (ImageView) holder.itemView.findViewById(R.id.remen_recycler_image);
+
+            MyViewHolder viewHolder = (MyViewHolder) holder;
+
             Typeface Segoe = Typeface.createFromAsset(getActivity().getAssets(),"fonts/Segoe WP.TTF");
-            title.setTypeface(Segoe);
-            title.setText(bean.getRecent().get(position).getTitle());
+            viewHolder.title.setTypeface(Segoe);
+            viewHolder.title.setText(bean.getRecent().get(position).getTitle());
 
             String thumbnail = bean.getRecent().get(position).getThumbnail();
-            ImageRequest imageRequest = new ImageRequest(thumbnail, new Response.Listener<Bitmap>() {
-                @Override
-                public void onResponse(Bitmap response) {
-                    imageView.setImageBitmap(response);
-                }
-            }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("ERROR IN REMEN","RECYCLER IMAGE FAILED");
-                    imageView.setImageResource(R.drawable.knowhy);
-                }
-            });
-            queue.add(imageRequest);
+            Picasso.with(getActivity()).load(thumbnail).error(R.drawable.knowhy).into(viewHolder.imageView);
 
             final int id = bean.getRecent().get(position).getNews_id();
-
             holder.itemView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -124,10 +145,15 @@ public class Remen extends Fragment {
             return bean.getRecent().size();
         }
 
-        class MyViewHolder extends RecyclerView.ViewHolder{
+        public class MyViewHolder extends RecyclerView.ViewHolder{
+
+            public TextView title;
+            public ImageView imageView;
 
             public MyViewHolder(View itemView) {
                 super(itemView);
+                title = (TextView) itemView.findViewById(R.id.remen_recycler_title);
+                imageView = (ImageView) itemView.findViewById(R.id.remen_recycler_image);
             }
         }
     }

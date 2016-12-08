@@ -28,28 +28,31 @@ import com.readystatesoftware.systembartint.SystemBarTintManager;
 import java.util.ArrayList;
 import java.util.List;
 
+import butterknife.BindView;
+import butterknife.ButterKnife;
+
 public class MainActivity extends AppCompatActivity implements EmptyFragment.onInternetAccessChanged{
 
     private static final int PAGE_NUM = 4;
-    private ViewPager viewPager;
-    private TabLayout tabLayout;
-    private Fragment empty;
     private long exitTime = 0;
 
+    @BindView(R.id.view_pager)ViewPager viewPager;
+    @BindView(R.id.tab_layout)TabLayout tabLayout;
+
+    private Fragment empty;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        ButterKnife.bind(this);
         initSystemBar(this);
 
         TextView KNOWHY = (TextView) findViewById(R.id.knowhy);
         Typeface SegoeSemibold = Typeface.createFromAsset(this.getAssets(),"fonts/Segoe WP Semibold.TTF");
         assert KNOWHY != null;
         KNOWHY.setTypeface(SegoeSemibold);
-
-        tabLayout = (TabLayout) findViewById(R.id.tab_layout);
-        viewPager = (ViewPager) findViewById(R.id.view_pager);
 
         ConnectivityManager con=(ConnectivityManager)getSystemService(Activity.CONNECTIVITY_SERVICE);
         boolean wifi=con.getNetworkInfo(ConnectivityManager.TYPE_WIFI).isConnected();

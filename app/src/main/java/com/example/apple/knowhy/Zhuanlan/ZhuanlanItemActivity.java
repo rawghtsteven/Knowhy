@@ -23,8 +23,17 @@ import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.example.apple.knowhy.ArticalActivity;
+import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
+import com.example.apple.knowhy.ServiceGenerator;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by Rawght Steven on 8/15/16, 11.
@@ -32,53 +41,60 @@ import com.google.gson.Gson;
  */
 public class ZhuanlanItemActivity extends AppCompatActivity {
 
+    @BindView(R.id.zhuanlan_item_title)TextView title;
+    @BindView(R.id.zhuanlan_item_des)TextView description;
+    @BindView(R.id.zhuanlan_item_recycler)RecyclerView recyclerView;
+    public static final String TAG = "专栏ITEM";
     private int id;
-    private RequestQueue queue;
-    private TextView title, description;
-    private RecyclerView recyclerView;
     private String desc;
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.zhuanlan_item_activity);
+        ButterKnife.bind(this);
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        title = (TextView) findViewById(R.id.zhuanlan_item_title);
-        description = (TextView) findViewById(R.id.zhuanlan_item_des);
-        recyclerView = (RecyclerView) findViewById(R.id.zhuanlan_item_recycler);
-        queue = Volley.newRequestQueue(this);
+
+        Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
+        Typeface SegoeLight = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP Light.TTF");
+        title.setTypeface(Segoe);
+        description.setTypeface(SegoeLight);
+
+        LinearLayoutManager manager = new LinearLayoutManager(this);
+        recyclerView.setLayoutManager(manager);
+
         Intent intent = getIntent();
         id = intent.getIntExtra("id",0);
         desc = intent.getStringExtra("desc");
 
-        String url = "http://news-at.zhihu.com/api/3/section/"+id;
-        StringRequest stringRequest = new StringRequest(url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Gson gson = new Gson();
-                ZhuanlanItemBean bean = gson.fromJson(response,ZhuanlanItemBean.class);
-                display(bean);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("ERROR IN ZHUANLAN","DATA ACCESS FAILED");
-            }
-        });
-        queue.add(stringRequest);
+        loadData(id);
     }
 
-    private void display(ZhuanlanItemBean bean) {
-        Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
-        Typeface SegoeLight = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP Light.TTF");
-        title.setTypeface(Segoe);
-        title.setText(bean.getName());
-        description.setTypeface(SegoeLight);
-        description.setText(desc);
-        Myadapter myadapter = new Myadapter(bean);
-        LinearLayoutManager manager = new LinearLayoutManager(this);
-        recyclerView.setLayoutManager(manager);
-        recyclerView.setAdapter(myadapter);
+    private void loadData(int id) {
+        InternetService service = ServiceGenerator.createService(InternetService.class);
+        service.getZhuanlanItem(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<ZhuanlanItemBean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"Data loaded");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"Data load failed");
+                        e.printStackTrace();
+                    }
+
+                    @Override
+                    public void onNext(ZhuanlanItemBean zhuanlanItemBean) {
+                        Myadapter myadapter = new Myadapter(zhuanlanItemBean);
+                        recyclerView.setAdapter(myadapter);
+                        title.setText(zhuanlanItemBean.getName());
+                        description.setText(desc);
+                    }
+                });
     }
 
     private class Myadapter extends RecyclerView.Adapter{
@@ -97,29 +113,16 @@ public class ZhuanlanItemActivity extends AppCompatActivity {
 
         @Override
         public void onBindViewHolder(RecyclerView.ViewHolder holder, int position) {
-            TextView title = (TextView) holder.itemView.findViewById(R.id.zhuanlan_item_recycler_title);
-            final ImageView imageView = (ImageView) holder.itemView.findViewById(R.id.zhuanlan_item_recycler_image);
-            TextView date = (TextView) holder.itemView.findViewById(R.id.zhuanlan_item_date);
+            MyViewHolder viewHolder = (MyViewHolder) holder;
             Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
-            title.setTypeface(Segoe);
-            title.setText(bean.getStories().get(position).getTitle());
+            viewHolder.title.setTypeface(Segoe);
+            viewHolder.title.setText(bean.getStories().get(position).getTitle());
             Typeface SegoeLight = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP Light.TTF");
-            date.setTypeface(SegoeLight);
-            date.setText(bean.getStories().get(position).getDisplay_date());
+            viewHolder.date.setTypeface(SegoeLight);
+            viewHolder.date.setText(bean.getStories().get(position).getDisplay_date());
+
             String thumbnail = bean.getStories().get(position).getImages().get(0);
-            ImageRequest imageRequest = new ImageRequest(thumbnail, new Response.Listener<Bitmap>() {
-                @Override
-                public void onResponse(Bitmap response) {
-                    imageView.setImageBitmap(response);
-                }
-            }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {
-                @Override
-                public void onErrorResponse(VolleyError error) {
-                    Log.e("ERROR IN ZHUANLAN","RECYCLER IMAGE FAILED");
-                    imageView.setImageResource(R.drawable.knowhy);
-                }
-            });
-            queue.add(imageRequest);
+            Picasso.with(getApplicationContext()).load(thumbnail).error(R.drawable.knowhy).into(viewHolder.imageView);
 
             final int id = bean.getStories().get(position).getId();
             holder.itemView.setOnClickListener(new View.OnClickListener() {
@@ -138,8 +141,16 @@ public class ZhuanlanItemActivity extends AppCompatActivity {
         }
 
         class MyViewHolder extends RecyclerView.ViewHolder {
+
+            TextView title;
+            ImageView imageView;
+            TextView date;
+
             public MyViewHolder(View itemView) {
                 super(itemView);
+                title = (TextView) itemView.findViewById(R.id.zhuanlan_item_recycler_title);
+                imageView = (ImageView) itemView.findViewById(R.id.zhuanlan_item_recycler_image);
+                date = (TextView) itemView.findViewById(R.id.zhuanlan_item_date);
             }
         }
     }

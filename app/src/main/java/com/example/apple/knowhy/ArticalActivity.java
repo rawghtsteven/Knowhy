@@ -24,11 +24,18 @@ import com.android.volley.toolbox.ImageRequest;
 import com.android.volley.toolbox.StringRequest;
 import com.android.volley.toolbox.Volley;
 import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
 import org.json.JSONObject;
 
 import java.util.List;
+
+import butterknife.BindView;
+import butterknife.ButterKnife;
+import rx.Subscriber;
+import rx.android.schedulers.AndroidSchedulers;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by Rawght Steven on 8/9/16, 14.
@@ -37,91 +44,48 @@ import java.util.List;
 @SuppressLint("ValidFragment")
 public class ArticalActivity extends AppCompatActivity{
 
-    private int id;
-    private ImageView imageView;
-    private TextView textView;
-    private WebView webView;
-    private Button share, comment, like;
-    private RequestQueue queue;
+    @BindView(R.id.article_image)ImageView imageView;
+    @BindView(R.id.article_title)TextView textView;
+    @BindView(R.id.article_web)WebView webView;
+    @BindView(R.id.share)Button share;
+    @BindView(R.id.comment)Button comment;
+    @BindView(R.id.like)Button like;
 
+    public static final String TAG = "文章";
+    private int id;
+    private String shareUrl = "";
+
+    public void setShareUrl(String shareUrl) {
+        this.shareUrl = shareUrl;
+    }
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.artical_activity);
+        ButterKnife.bind(this);
+
         getWindow().setFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN, WindowManager.LayoutParams.FLAG_FULLSCREEN);
-        imageView = (ImageView) findViewById(R.id.article_image);
-        textView = (TextView) findViewById(R.id.article_title);
-        webView = (WebView) findViewById(R.id.article_web);
-        share = (Button) findViewById(R.id.share);
-        comment = (Button) findViewById(R.id.comment);
-        like = (Button) findViewById(R.id.like);
-        queue = Volley.newRequestQueue(this);
+
+        Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
+        textView.setTypeface(Segoe);
 
         Intent intent = getIntent();
         id = intent.getIntExtra("id",0);
 
-        String url = "http://news-at.zhihu.com/api/4/news/"+id;
-        StringRequest request = new StringRequest(url, new Response.Listener<String>() {
-            @Override
-            public void onResponse(String response) {
-                Log.e("RESPONSE",response);
-                Gson gson = new Gson();
-                ArticalBean bean = gson.fromJson(response,ArticalBean.class);
-                display(bean);
-            }
-        }, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("ERROR!",error.getMessage());
-            }
-        });
-        queue.add(request);
+        loadData(id);
+
+        setOnClickListeners();
     }
 
-
-    @SuppressLint("SetJavaScriptEnabled")
-    private void display(ArticalBean bean) {
-        String body = bean.getBody();
-        String title = bean.getTitle();
-        String image = bean.getImage();
-
-        List<String> js = bean.getJs();
-        List<String> css = bean.getCss();
-        String html = " <link rel=\"stylesheet\" type=\"text/css\" href=\""+css.get(0)+"\">"+body;
-        Log.e("HTML",html);
-
-        final String share_url = bean.getShare_url();
-        //ArticalBean.Section section = bean.getSection();
-        //String thumbnail = section.getThumbnail();
-        //String name = section.getName();
-        WebSettings settings = webView.getSettings();
-        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
-        settings.setJavaScriptEnabled(true);
-        webView.loadDataWithBaseURL(null,html,"text/html","utf-8",null);
-        Typeface Segoe = Typeface.createFromAsset(getAssets(),"fonts/Segoe WP.TTF");
-        textView.setTypeface(Segoe);
-        textView.setText(title);
-        ImageRequest imageRequest = new ImageRequest(image, new Response.Listener<Bitmap>() {
-            @Override
-            public void onResponse(Bitmap response) {
-                imageView.setImageBitmap(response);
-            }
-        }, 0, 0, Bitmap.Config.RGB_565, new Response.ErrorListener() {
-            @Override
-            public void onErrorResponse(VolleyError error) {
-                Log.e("IMAGE ERROR!",error.getMessage());
-                imageView.setImageResource(R.drawable.xperia3);
-            }
-        });
-        queue.add(imageRequest);
-
+    private void setOnClickListeners() {
         share.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 Intent intent = new Intent();
+                String shareText = "来自Knowhy的阅读分享";
                 intent.setAction(Intent.ACTION_SEND);
-                intent.putExtra("String",share_url);
+                intent.putExtra(Intent.EXTRA_TEXT,shareText+"\n"+shareUrl);
                 intent.setType("text/html");
                 startActivity(Intent.createChooser(intent,"选择你要分享的应用"));
             }
@@ -139,27 +103,73 @@ public class ArticalActivity extends AppCompatActivity{
         like.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                String url = "http://news-at.zhihu.com/api/4/story-extra/"+id;
-                StringRequest request = new StringRequest(url, new Response.Listener<String>() {
-                    @Override
-                    public void onResponse(String response) {
-                        try {
-                            JSONObject jsonObject = new JSONObject(response);
-                            int likes = jsonObject.getInt("popularity");
-                            Toast.makeText(getApplication(),"点赞数:"+likes,Toast.LENGTH_SHORT).show();
-                            like.setBackgroundResource(R.drawable.liked);
-                        } catch (JSONException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }, new Response.ErrorListener() {
-                    @Override
-                    public void onErrorResponse(VolleyError error) {
-                        Log.e("LIKE ERROR","");
-                    }
-                });
-                queue.add(request);
+                InternetService service = ServiceGenerator.createService(InternetService.class);
+                service.getExtraInfo(id)
+                        .subscribeOn(Schedulers.io())
+                        .observeOn(AndroidSchedulers.mainThread())
+                        .subscribe(new Subscriber<ExtraInfoBean>() {
+                            @Override
+                            public void onCompleted() {
+                                Log.e(TAG,"Extra Info loaded");
+                            }
+
+                            @Override
+                            public void onError(Throwable e) {
+                                Log.e(TAG,"Extra info load failed");
+                                e.printStackTrace();
+                            }
+
+                            @Override
+                            public void onNext(ExtraInfoBean extraInfoBean) {
+                                Toast.makeText(getApplicationContext(),"点赞数:"+extraInfoBean.getPopularity(),Toast.LENGTH_SHORT).show();
+                                like.setBackgroundResource(R.drawable.liked);
+                            }
+                        });
             }
         });
+    }
+
+    private void loadData(int id) {
+        InternetService service = ServiceGenerator.createService(InternetService.class);
+        service.getArtical(id)
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
+                .subscribe(new Subscriber<ArticalBean>() {
+                    @Override
+                    public void onCompleted() {
+                        Log.e(TAG,"Data loaded");
+                    }
+
+                    @Override
+                    public void onError(Throwable e) {
+                        Log.e(TAG,"Data load failed");
+                        e.printStackTrace();
+                    }
+
+                    @SuppressLint("SetJavaScriptEnabled")
+                    @Override
+                    public void onNext(ArticalBean bean) {
+                        String body = bean.getBody();
+                        String title = bean.getTitle();
+                        String url = bean.getImage();
+
+                        List<String> js = bean.getJs();
+                        List<String> css = bean.getCss();
+                        String html = " <link rel=\"stylesheet\" type=\"text/css\" href=\""+css.get(0)+"\">"+body;
+                        Log.e("HTML",html);
+
+                        String share_url = bean.getShare_url();
+                        Log.e("SHARE_URL",share_url);
+                        setShareUrl(share_url);
+
+                        WebSettings settings = webView.getSettings();
+                        settings.setLayoutAlgorithm(WebSettings.LayoutAlgorithm.NARROW_COLUMNS);
+                        settings.setJavaScriptEnabled(true);
+                        webView.loadDataWithBaseURL(null,html,"text/html","utf-8",null);
+
+                        textView.setText(title);
+                        Picasso.with(getApplicationContext()).load(url).error(R.drawable.xperia3).into(imageView);
+                    }
+                });
     }
 }

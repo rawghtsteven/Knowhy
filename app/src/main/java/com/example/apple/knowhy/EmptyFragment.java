@@ -1,7 +1,6 @@
 package com.example.apple.knowhy;
 
 import android.app.Activity;
-import android.content.Context;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
