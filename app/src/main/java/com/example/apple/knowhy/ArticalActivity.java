@@ -156,7 +156,6 @@ public class ArticalActivity extends AppCompatActivity{
                         List<String> js = bean.getJs();
                         List<String> css = bean.getCss();
                         String html = " <link rel=\"stylesheet\" type=\"text/css\" href=\""+css.get(0)+"\">"+body;
-                        Log.e("HTML",html);
 
                         String share_url = bean.getShare_url();
                         Log.e("SHARE_URL",share_url);

@@ -23,6 +23,7 @@ import com.example.apple.knowhy.Remen.Remen;
 import com.example.apple.knowhy.Ribao.Ribao;
 import com.example.apple.knowhy.Zhuanlan.Zhuanlan;
 import com.example.apple.knowhy.Zhuti.Zhuti;
+import com.mmga.metroloading.MetroLoadingView;
 import com.readystatesoftware.systembartint.SystemBarTintManager;
 
 import java.util.ArrayList;
@@ -38,6 +39,7 @@ public class MainActivity extends AppCompatActivity implements EmptyFragment.onI
 
     @BindView(R.id.view_pager)ViewPager viewPager;
     @BindView(R.id.tab_layout)TabLayout tabLayout;
+    @BindView(R.id.loadingView)MetroLoadingView loadingView;
 
     private Fragment empty;
 
@@ -48,6 +50,8 @@ public class MainActivity extends AppCompatActivity implements EmptyFragment.onI
 
         ButterKnife.bind(this);
         initSystemBar(this);
+
+        loadingView.start();
 
         TextView KNOWHY = (TextView) findViewById(R.id.knowhy);
         Typeface SegoeSemibold = Typeface.createFromAsset(this.getAssets(),"fonts/Segoe WP Semibold.TTF");

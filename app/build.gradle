@@ -42,4 +42,5 @@ dependencies {
     compile 'com.squareup.okhttp:okhttp:2.7.5'
     compile 'com.mmga.metroloading:metroloading:1.0.0'
     compile 'com.squareup.picasso:picasso:2.5.2'
+    compile 'com.mmga.metroloading:metroloading:1.0.0'
 }

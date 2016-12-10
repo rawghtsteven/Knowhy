@@ -2,12 +2,8 @@ package com.example.apple.knowhy.Ribao;
 
 import android.annotation.SuppressLint;
 import android.content.Intent;
-import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
 import android.graphics.Typeface;
 import android.os.Bundle;
-import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
@@ -17,16 +13,11 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.apple.knowhy.ArticalActivity;
-import com.example.apple.knowhy.HttpUtil;
 import com.example.apple.knowhy.R;
 import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
-import java.io.InputStream;
-
 import butterknife.BindView;
 import butterknife.ButterKnife;
-import butterknife.OnClick;
 import butterknife.Unbinder;
 
 /**

@@ -1,11 +1,9 @@
 package com.example.apple.knowhy.Ribao;
 
 import android.content.Intent;
-import android.graphics.Bitmap;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.Message;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;
@@ -20,21 +18,12 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.apple.knowhy.ArticalActivity;
-import com.example.apple.knowhy.HttpUtil;
 import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
 import com.example.apple.knowhy.ServiceGenerator;
+import com.mmga.metroloading.MetroLoadingView;
 import com.squareup.picasso.Picasso;
-
-import org.json.JSONArray;
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -148,6 +137,8 @@ public class Ribao extends Fragment {
                         storiesList = infoBean.getStories();
                         recyclerAdapter.setStoriesList(storiesList);
                         recyclerAdapter.notifyDataSetChanged();
+                        MetroLoadingView loadingView = (MetroLoadingView) getActivity().findViewById(R.id.loadingView);
+                        loadingView.stop();
                     }
                 });
     }

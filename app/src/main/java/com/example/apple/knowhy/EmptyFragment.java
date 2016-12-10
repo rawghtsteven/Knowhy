@@ -1,9 +1,12 @@
 package com.example.apple.knowhy;
 
 import android.app.Activity;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.os.Bundle;
+import android.provider.Settings;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.Fragment;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -22,7 +25,7 @@ public class EmptyFragment extends Fragment {
     @Nullable
     @Override
     public View onCreateView(LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.empty_fragment,container,false);
+        final View view = inflater.inflate(R.layout.empty_fragment,container,false);
         Button refresh = (Button) view.findViewById(R.id.refresh);
         refresh.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -33,7 +36,14 @@ public class EmptyFragment extends Fragment {
                 if (wifi|internet){
                     changed.accessChanged(true);
                 }else {
-                    Toast.makeText(getActivity(),"刷新失败",Toast.LENGTH_SHORT).show();
+                    Snackbar snackbar = Snackbar.make(view,"您的网络出现了问题",Snackbar.LENGTH_LONG).setAction("去设置", new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            Intent intent = new Intent(Settings.ACTION_WIFI_SETTINGS);
+                            startActivity(intent);
+                        }
+                    });
+                    snackbar.show();
                 }
             }
         });
