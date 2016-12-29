@@ -4,7 +4,7 @@
 Zhihu Daily App of Metro Theme!
 
 ## 下载 | Download
-https://fir.im/5d3j
+http://fir.im/z4t6
 
 ## 截图 | Screenshots
 
