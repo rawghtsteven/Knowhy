@@ -1,6 +1,9 @@
 # Knowhy
 
-知乎日报 in Metro!  
+![alt](http://ww4.sinaimg.cn/mw690/be0cd226jw1fb7lir5qnxj205k05kq31.jpg)
+
+知乎日报 in Metro!
+
 Zhihu Daily App of Metro Theme!
 
 ## 下载 | Download
