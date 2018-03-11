@@ -19,17 +19,10 @@ import android.view.WindowManager;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.android.volley.RequestQueue;
-import com.android.volley.Response;
-import com.android.volley.VolleyError;
-import com.android.volley.toolbox.ImageRequest;
-import com.android.volley.toolbox.StringRequest;
-import com.android.volley.toolbox.Volley;
 import com.example.apple.knowhy.ArticalActivity;
 import com.example.apple.knowhy.InternetService;
 import com.example.apple.knowhy.R;
 import com.example.apple.knowhy.ServiceGenerator;
-import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
@@ -54,8 +47,6 @@ public class ZhutiItemActivity extends AppCompatActivity{
 
     public static final String TAG = "专栏ITEM";
     private int id;
-    private RequestQueue queue;
-
 
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {

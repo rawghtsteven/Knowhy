@@ -37,7 +37,7 @@
         app:tabSelectedTextColor="@color/black"
         app:tabIndicatorHeight="0dp"
         app:tabMode="scrollable"
-        android:layout_height="wrap_content"
+        android:layout_height="58dp"
         android:layout_below="@+id/knowhy"
         >
 
