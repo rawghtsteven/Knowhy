@@ -48,4 +48,7 @@ public interface InternetService {
 
     @GET("4/story-extra/{id}")
     Observable<ExtraInfoBean> getExtraInfo(@Path("id")int id);
+
+    @GET("4/news/before/{date}")
+    Observable<InfoBean> getHistory(@Path("date")String date);
 }
